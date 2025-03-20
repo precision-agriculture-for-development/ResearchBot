@@ -3,9 +3,6 @@ from openai import OpenAI
 import streamlit as st
 
 
-# load_dotenv()
-
-
 
 # Moderation check
 def moderation_endpoint(client: OpenAI, text: str) -> bool:
@@ -20,6 +17,93 @@ def moderation_endpoint(client: OpenAI, text: str) -> bool:
     """
     response = client.moderations.create(input=text)
     return response.results[0].flagged
+
+def research():
+
+    if "openai" not in st.session_state:
+        st.session_state.openai = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+
+    client = st.session_state.openai
+
+    # Retrieve the vector store you want to use
+    if "vector" not in st.session_state:
+            st.session_state.vector = st.secrets["VECTOR_STORE_ID"]
+
+    vector = st.session_state.vector
+
+    # Create the title and subheader for the Streamlit page
+    st.set_page_config(page_title="Research Bot", page_icon="🕵️", layout='wide')
+    st.sidebar.title("Researchy")
+
+    # Apply custom CSS
+    st.sidebar.html("""
+            <style>
+                #MainMenu {visibility: hidden}
+                #header {visibility: hidden}
+                #footer {visibility: hidden}
+                .block-container {
+                    padding-top: 3rem;
+                    padding-bottom: 2rem;
+                    padding-left: 3rem;
+                    padding-right: 3rem;
+                    }
+            </style>
+            """)
+    
+    # UI
+    st.sidebar.subheader("🔮 Experiment Registry Engine")
+
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
+
+    input_prompt = []
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+            input_prompt.append({"role": message["role"], "content": message["content"]})
+
+    if prompt := st.chat_input("Ask me a question about your experiments"):
+        if moderation_endpoint(client, prompt):
+            st.toast("Your message was flagged. Please try again.", icon="⚠️")
+            st.stop
+
+        st.session_state.messages.append({
+            "role": "user",
+            "content": prompt
+        })
+
+        chat = st.chat_message("user")
+        chat.write(prompt)
+
+        assistant_output = ""
+        input_prompt.append({"role": "user", "content": prompt})
+
+        with st.chat_message("assistant"):
+            with client.responses.create(
+                model="gpt-4o",
+                temperature=0.0,
+                tools=
+                    [{
+                        "type": "file_search",
+                        "vector_store_ids": [vector],
+                        "max_num_results": 5,
+                    }],
+                    input=input_prompt,
+                    instructions="""You are a expert researcher. 
+                            Use your knowledge base to answer questions about the specific research in the knowledge base. 
+                            Only use the knowledge base when responding.""",
+                    include=["file_search_call.results"],
+                    stream=True,
+            ) as stream:
+
+                for sse in stream:
+                    if sse.type == "response.created":
+                        assistant_text_box = st.empty()
+                    if sse.type == "response.output_text.delta" and sse.delta:
+                        assistant_output += sse.delta
+                        assistant_text_box.markdown(assistant_output)
+                        
+            st.session_state.messages.append({"role": "assistant", "content": assistant_output})
 
 def assistant():
 
@@ -132,4 +216,4 @@ def assistant():
             st.session_state.messages.append({"role": "assistant", "items": assistant_output})
 
 if __name__ == "__main__":
-    assistant()
+    research()

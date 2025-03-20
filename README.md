@@ -1,6 +1,6 @@
 # ResearchBot
 
-This is a StreamLit app fronting the Assistant API for the experiment registry
+This is a StreamLit app fronting the Assistant API or Vector Stores & Respones API for the experiment registry
 
 Ensure `uv` is installed.
 
@@ -20,8 +20,9 @@ Add the relevant libraries:
 
 Put your OpenAI API key and Assistant ID into `.streamlit\secrets.toml`
 
-- `OPENAI_API_KEY=xxxxxxx`
-- `ASSISTANT_ID=aaaaa`
+- `OPENAI_API_KEY="xxxxxxx"`
+- `ASSISTANT_ID="aaaaa"`
+- `VECTOR_STORE_ID="dsfsdfds"`
 
 
 Run the app:

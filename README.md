@@ -18,7 +18,7 @@ Add the relevant libraries:
 
 `uv add openai streamlit`
 
-Put your OpenAI API key and Assistant ID into `.streamlit\secrets.toml`
+Put your OpenAI API key, Assistant ID and Vector Store ID into `.streamlit\secrets.toml`
 
 - `OPENAI_API_KEY="xxxxxxx"`
 - `ASSISTANT_ID="aaaaa"`
